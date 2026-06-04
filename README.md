@@ -76,8 +76,8 @@ You can learn more about the Deepgram API at [developers.deepgram.com](https://d
 Interested in contributing? We ❤️ pull requests!
 
 To make sure our community is safe for all, be sure to review and agree to our
-[Code of Conduct](./.github/CODE_OF_CONDUCT.md). Then see the
-[Contribution](./.github/CONTRIBUTING.md) guidelines for more information.
+[Code of Conduct](./CODE_OF_CONDUCT.md). Then see the
+[Contribution](./CONTRIBUTING.md) guidelines for more information.
 
 ## Getting Help
 
@@ -88,4 +88,4 @@ project, let us know! You can either:
 - [Join the Deepgram Github Discussions Community](https://github.com/orgs/deepgram/discussions)
 - [Join the Deepgram Discord Community](https://discord.gg/xWRaCDBtW4)
 
-[license]: LICENSE.txt
+[license]: LICENSE
