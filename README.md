@@ -1,10 +1,4 @@
-# Repo Name
-
- [![Discord](https://dcbadge.vercel.app/api/server/xWRaCDBtW4?style=flat)](https://discord.gg/xWRaCDBtW4)
-
- > any other repository badges can be added here.
-
-A repository template for open-source demos, guides and sample apps. Description here.
+# Deepgram Connect Demo Agent Skill
 
 ## Getting an API Key
 
