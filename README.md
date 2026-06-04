@@ -1,8 +1,12 @@
 # Deepgram Connect Demo Agent Skill
 
-A [Claude Code](https://claude.com/claude-code) skill that generates every deployment file needed
-to stand up an **Amazon Connect AI Agent demo** for any industry vertical. Give it a one-line
-scenario and it produces a complete, ready-to-deploy file set tailored to that use case.
+An agent skill that generates every deployment file needed to stand up an **Amazon Connect AI
+Agent demo** for any industry vertical. Give it a one-line scenario and it produces a complete,
+ready-to-deploy file set tailored to that use case.
+
+The skill is a plain `SKILL.md` instruction file plus reference materials, so it works with any
+coding agent that supports the skill format — [Claude Code](https://claude.com/claude-code),
+Cursor, and similar AI tools. Throughout this README, "your agent" means whichever tool you use.
 
 ## What it generates
 
@@ -19,7 +23,7 @@ For each demo, the skill creates a `{vertical}-demo/` folder containing:
 ## Repository layout
 
 ```text
-SKILL.md                      # the skill definition Claude follows
+SKILL.md                      # the skill definition your agent follows
 references/
 ├── examples.md               # exact formats for every generated file
 ├── energy_template.yaml      # reference demo (energy vertical)
@@ -28,26 +32,33 @@ references/
 
 ## Installation
 
-Claude Code loads skills from `~/.claude/skills/`. Clone this repo and symlink it in:
+Make this skill discoverable by your agent by placing it where that agent looks for skills. The
+skill's name (`connect-demo-generator`) comes from the `name:` field in `SKILL.md`, not the
+directory name, so the folder name is your choice.
 
 ```bash
 git clone git@github.com:deepgram-devs/connect-demo-agent-skill.git
-ln -s "$(pwd)/connect-demo-agent-skill" ~/.claude/skills/connect-demo-generator
 ```
 
-The skill's name (`connect-demo-generator`) comes from the `name:` field in `SKILL.md`, so the
-symlink directory name is your choice.
+- **Claude Code** loads skills from `~/.claude/skills/`. Symlink (or copy) the repo in:
+  ```bash
+  ln -s "$(pwd)/connect-demo-agent-skill" ~/.claude/skills/connect-demo-generator
+  ```
+- **Other coding agents** — point your agent at the cloned folder using whatever mechanism it
+  provides for skills, rules, or reusable instruction files (for example, a custom rules/skills
+  directory, or by referencing `SKILL.md` in your project). At minimum, give the agent access to
+  `SKILL.md` and the `references/` folder.
 
 ## Usage
 
-Inside Claude Code, describe the demo you want in plain language. For example:
+Inside your agent, describe the demo you want in plain language. For example:
 
 - `create a demo for an insurance use case — customer calling about a claim`
 - `make me a banking call center demo where the customer wants to transfer funds`
 - `I need a telecom demo for a subscriber upgrading their plan`
 
-Claude detects the skill, designs 2–3 tools for the scenario (identity verification, data lookup,
-and an action), invents realistic sample data, and writes the full file set into a new
+The agent picks up the skill, designs 2–3 tools for the scenario (identity verification, data
+lookup, and an action), invents realistic sample data, and writes the full file set into a new
 `{vertical}-demo/` folder. You can then iterate — e.g. *"rename the customers"*, *"make the agent's
 summary shorter"*, or *"add a third tool for scheduling a payment."*
 
