@@ -1,0 +1,292 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Summit Energy Lambda APIs - account_lookup, usage_history, and create_payment_plan
+
+Parameters:
+  AgentCoreGatewayRoleName:
+    Type: String
+    Description: The name of the AgentCore Gateway service role
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: Energy-LambdaExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  AccountLookupFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: energy_account_lookup
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: |
+          import traceback
+
+          ACCOUNTS = {
+              ("Maria Chen", "SE-441928"): {
+                  "account_number": "SE-441928",
+                  "name": "Maria Chen",
+                  "address": "2847 Maple Ridge Dr, Denver, CO 80220",
+                  "plan": "Residential Standard",
+                  "current_balance": 187.43,
+                  "due_date": "2026-04-05",
+                  "payment_status": "unpaid",
+                  "autopay": False,
+              },
+              ("James Whitfield", "SE-557012"): {
+                  "account_number": "SE-557012",
+                  "name": "James Whitfield",
+                  "address": "910 Elk Meadow Ln, Aurora, CO 80015",
+                  "plan": "Residential Time-of-Use",
+                  "current_balance": 0.00,
+                  "due_date": "2026-04-12",
+                  "payment_status": "paid",
+                  "autopay": True,
+              },
+              ("Rosa Gutierrez", "SE-338471"): {
+                  "account_number": "SE-338471",
+                  "name": "Rosa Gutierrez",
+                  "address": "1523 Cottonwood St, Lakewood, CO 80226",
+                  "plan": "Residential Standard",
+                  "current_balance": 142.67,
+                  "due_date": "2026-04-08",
+                  "payment_status": "unpaid",
+                  "autopay": False,
+              },
+              ("David Park", "SE-662190"): {
+                  "account_number": "SE-662190",
+                  "name": "David Park",
+                  "address": "4401 Summit Blvd, Boulder, CO 80301",
+                  "plan": "Residential Time-of-Use",
+                  "current_balance": 95.20,
+                  "due_date": "2026-04-15",
+                  "payment_status": "unpaid",
+                  "autopay": False,
+              },
+              ("Linda Thompson", "SE-774835"): {
+                  "account_number": "SE-774835",
+                  "name": "Linda Thompson",
+                  "address": "782 Spruce Way, Arvada, CO 80004",
+                  "plan": "Residential Standard",
+                  "current_balance": 0.00,
+                  "due_date": "2026-04-10",
+                  "payment_status": "paid",
+                  "autopay": True,
+              },
+          }
+
+          def lambda_handler(event, context):
+              try:
+                  if "name" not in event:
+                      return {"error": "name field is required"}
+                  if "account_number" not in event:
+                      return {"error": "account_number field is required"}
+                  name = event["name"]
+                  account_number = event["account_number"]
+                  account = ACCOUNTS.get((name, account_number))
+                  if account:
+                      return account
+                  return {"error": "Account not found. Please verify your name and account number."}
+              except Exception:
+                  traceback.print_exc()
+                  return {"error": "Internal server error"}
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 10
+      MemorySize: 128
+
+  UsageHistoryFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: energy_usage_history
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: |
+          USAGE = {
+              "SE-441928": {
+                  "account_number": "SE-441928",
+                  "unit": "kWh",
+                  "history": [
+                      {"month": "2025-10", "usage": 824, "cost": 98.88},
+                      {"month": "2025-11", "usage": 1035, "cost": 124.20},
+                      {"month": "2025-12", "usage": 1488, "cost": 178.56},
+                      {"month": "2026-01", "usage": 1610, "cost": 193.20},
+                      {"month": "2026-02", "usage": 1562, "cost": 187.44},
+                      {"month": "2026-03", "usage": 1140, "cost": 136.80},
+                  ],
+                  "avg_12mo": 1109,
+                  "note": "Usage increased 80% from October to January, consistent with seasonal heating demand",
+              },
+              "SE-557012": {
+                  "account_number": "SE-557012",
+                  "unit": "kWh",
+                  "history": [
+                      {"month": "2025-10", "usage": 612, "cost": 73.44},
+                      {"month": "2025-11", "usage": 780, "cost": 93.60},
+                      {"month": "2025-12", "usage": 945, "cost": 113.40},
+                      {"month": "2026-01", "usage": 1020, "cost": 122.40},
+                      {"month": "2026-02", "usage": 998, "cost": 119.76},
+                      {"month": "2026-03", "usage": 735, "cost": 88.20},
+                  ],
+                  "avg_12mo": 848,
+                  "note": "Usage pattern consistent with time-of-use optimization",
+              },
+              "SE-338471": {
+                  "account_number": "SE-338471",
+                  "unit": "kWh",
+                  "history": [
+                      {"month": "2025-10", "usage": 710, "cost": 85.20},
+                      {"month": "2025-11", "usage": 920, "cost": 110.40},
+                      {"month": "2025-12", "usage": 1180, "cost": 141.60},
+                      {"month": "2026-01", "usage": 1290, "cost": 154.80},
+                      {"month": "2026-02", "usage": 1189, "cost": 142.68},
+                      {"month": "2026-03", "usage": 890, "cost": 106.80},
+                  ],
+                  "avg_12mo": 1030,
+                  "note": "Moderate seasonal increase during winter months",
+              },
+              "SE-662190": {
+                  "account_number": "SE-662190",
+                  "unit": "kWh",
+                  "history": [
+                      {"month": "2025-10", "usage": 550, "cost": 66.00},
+                      {"month": "2025-11", "usage": 680, "cost": 81.60},
+                      {"month": "2025-12", "usage": 810, "cost": 97.20},
+                      {"month": "2026-01", "usage": 870, "cost": 104.40},
+                      {"month": "2026-02", "usage": 793, "cost": 95.16},
+                      {"month": "2026-03", "usage": 620, "cost": 74.40},
+                  ],
+                  "avg_12mo": 720,
+                  "note": "Energy-efficient home with solar offset reducing net usage",
+              },
+              "SE-774835": {
+                  "account_number": "SE-774835",
+                  "unit": "kWh",
+                  "history": [
+                      {"month": "2025-10", "usage": 900, "cost": 108.00},
+                      {"month": "2025-11", "usage": 1150, "cost": 138.00},
+                      {"month": "2025-12", "usage": 1520, "cost": 182.40},
+                      {"month": "2026-01", "usage": 1680, "cost": 201.60},
+                      {"month": "2026-02", "usage": 1590, "cost": 190.80},
+                      {"month": "2026-03", "usage": 1200, "cost": 144.00},
+                  ],
+                  "avg_12mo": 1173,
+                  "note": "Larger home with electric heating; higher baseline usage",
+              },
+          }
+
+          def lambda_handler(event, context):
+              try:
+                  if "account_number" not in event:
+                      return {"error": "account_number field is required"}
+                  account_number = event["account_number"]
+                  usage = USAGE.get(account_number)
+                  if usage:
+                      return usage
+                  return {"error": "No usage history found for this account."}
+              except Exception:
+                  return {"error": "Internal server error"}
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 10
+      MemorySize: 128
+
+  CreatePaymentPlanFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: energy_create_payment_plan
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: |
+          import random
+          import string
+
+          BALANCES = {
+              "SE-441928": {"balance": 187.43, "due_date": "2026-04-05"},
+              "SE-557012": {"balance": 0.00, "due_date": "2026-04-12"},
+              "SE-338471": {"balance": 142.67, "due_date": "2026-04-08"},
+              "SE-662190": {"balance": 95.20, "due_date": "2026-04-15"},
+              "SE-774835": {"balance": 0.00, "due_date": "2026-04-10"},
+          }
+
+          def lambda_handler(event, context):
+              try:
+                  if "account_number" not in event:
+                      return {"error": "account_number field is required"}
+                  if "installments" not in event:
+                      return {"error": "installments field is required"}
+
+                  account_number = event["account_number"]
+                  installments = int(event["installments"])
+                  first_payment_date = event.get("first_payment_date")
+
+                  account = BALANCES.get(account_number)
+                  if not account:
+                      return {"error": "Account not found."}
+
+                  balance = account["balance"]
+                  if balance <= 0:
+                      return {"error": "No outstanding balance on this account."}
+
+                  if installments < 2 or installments > 12:
+                      return {"error": "Installments must be between 2 and 12."}
+
+                  monthly_payment = round(balance / installments, 2)
+                  if not first_payment_date:
+                      first_payment_date = account["due_date"]
+
+                  plan_id = "PP-" + "".join(random.choices(string.digits, k=5))
+
+                  return {
+                      "plan_id": plan_id,
+                      "account_number": account_number,
+                      "total_balance": balance,
+                      "monthly_payment": monthly_payment,
+                      "installments": installments,
+                      "first_payment_date": first_payment_date,
+                      "confirmation": f"Payment plan {plan_id} created. {installments} monthly payments of ${monthly_payment:.2f} starting {first_payment_date}.",
+                  }
+              except Exception:
+                  return {"error": "Internal server error"}
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 10
+      MemorySize: 128
+
+  GatewayLambdaInvokePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AgentCoreGatewayLambdaInvoke-Energy
+      Roles:
+        - !Ref AgentCoreGatewayRoleName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AmazonBedrockAgentCoreGatewayLambdaInvoke
+            Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*
+
+Outputs:
+  AccountLookupFunctionArn:
+    Description: ARN of the account_lookup Lambda
+    Value: !GetAtt AccountLookupFunction.Arn
+  UsageHistoryFunctionArn:
+    Description: ARN of the usage_history Lambda
+    Value: !GetAtt UsageHistoryFunction.Arn
+  CreatePaymentPlanFunctionArn:
+    Description: ARN of the create_payment_plan Lambda
+    Value: !GetAtt CreatePaymentPlanFunction.Arn
+  LambdaExecutionRoleArn:
+    Description: ARN of the shared Lambda execution role
+    Value: !GetAtt LambdaExecutionRole.Arn
