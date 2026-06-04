@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Prescription Lambda APIs - authenticate_user and get_prescriptions
+
+Parameters:
+  AgentCoreGatewayRoleName:
+    Type: String
+    Description: The name of the AgentCore Gateway service role
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: PrescriptionLambdaExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  AuthenticateUserFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: authenticate_user
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: |
+          import traceback
+
+          USERS = {
+              ("4075555555", "10001"): "M1001",
+              ("4075555555", "90210"): "M1002",
+              ("4075555555", "30301"): "M1003",
+              ("4075555555", "60601"): "M1004",
+              ("4075555555", "98101"): "M1005",
+          }
+
+          def lambda_handler(event, context):
+              try:
+                  if "phone_number" not in event:
+                      return {"error": "phone_number field is required"}
+                  if "zip_code" not in event:
+                      return {"error": "zip_code field is required"}
+                  phone_number = event["phone_number"]
+                  zip_code = event["zip_code"]
+                  member_id = USERS.get((phone_number, zip_code))
+                  if member_id:
+                      return {"member_id": member_id}
+                  return {"error": "Authentication failed. No matching user found."}
+              except Exception:
+                  traceback.print_exc()
+                  return {"error": "Internal server error"}
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 10
+      MemorySize: 128
+
+  GetPrescriptionsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: get_prescriptions
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: |
+          ORDERS = [
+              {
+                  "order_id": "ORD001",
+                  "member_id": "M1001",
+                  "status": "processing",
+                  "prescriptions": [{"rx_id": "RX1001", "name": "Amoxicillin 500mg", "quantity": 21, "refills_remaining": 0}],
+                  "timing": {"ready_at": None, "shipped_at": None, "delivered_at": None, "expected_pickup_time": "2025-12-20T10:00", "expected_delivery_time": None},
+                  "pharmacy": {"store_id": "SPR-001", "hours": {"weekday_hours": "8AM-8PM", "weekend_hours": "8AM-5PM"}},
+              },
+              {
+                  "order_id": "ORD002",
+                  "member_id": "M1002",
+                  "status": "ready_for_pickup",
+                  "prescriptions": [{"rx_id": "RX1002", "name": "Sumatriptan 50mg", "quantity": 9, "refills_remaining": 2}],
+                  "timing": {"ready_at": "2025-12-06T09:15", "shipped_at": None, "delivered_at": None, "expected_pickup_time": "2025-12-07T20:00", "expected_delivery_time": None},
+                  "pharmacy": {"store_id": "SPR-001", "hours": {"weekday_hours": "8AM-8PM", "weekend_hours": "8AM-5PM"}},
+              },
+              {
+                  "order_id": "ORD003",
+                  "member_id": "M1003",
+                  "status": "shipped",
+                  "prescriptions": [{"rx_id": "RX1003", "name": "Atorvastatin 20mg", "quantity": 30, "refills_remaining": 1}],
+                  "timing": {"ready_at": None, "shipped_at": "2025-02-17T15:00:00", "delivered_at": None, "expected_pickup_time": None, "expected_delivery_time": "2025-02-19T16:00:00"},
+                  "pharmacy": {"store_id": "SPR-002", "hours": {"weekday_hours": "8AM-8PM", "weekend_hours": "8AM-5PM"}},
+              },
+              {
+                  "order_id": "ORD004",
+                  "member_id": "M1004",
+                  "status": "delivered",
+                  "prescriptions": [{"rx_id": "RX1004", "name": "Lisinopril 10mg", "quantity": 30, "refills_remaining": 1}],
+                  "timing": {"ready_at": None, "shipped_at": "2025-02-10T11:00:00", "delivered_at": "2025-11-24T13:45", "expected_pickup_time": None, "expected_delivery_time": None},
+                  "pharmacy": {"store_id": "SPR-002", "hours": {"weekday_hours": "8AM-8PM", "weekend_hours": "8AM-5PM"}},
+              },
+              {
+                  "order_id": "ORD005",
+                  "member_id": "M1005",
+                  "status": "processing",
+                  "prescriptions": [{"rx_id": "RX1005", "name": "Metformin 500mg", "quantity": 60, "refills_remaining": 0}],
+                  "timing": {"ready_at": None, "shipped_at": None, "delivered_at": None, "expected_pickup_time": "2025-12-21T09:30", "expected_delivery_time": None},
+                  "pharmacy": {"store_id": "SPR-003", "hours": {"weekday_hours": "8AM-8PM", "weekend_hours": "8AM-5PM"}},
+              },
+              {
+                  "order_id": "ORD006",
+                  "member_id": "M1006",
+                  "status": "ready_for_pickup",
+                  "prescriptions": [{"rx_id": "RX1006", "name": "Losartan 25mg", "quantity": 30, "refills_remaining": 2}],
+                  "timing": {"ready_at": "2025-12-07T14:10", "shipped_at": None, "delivered_at": None, "expected_pickup_time": "2025-12-09T19:30", "expected_delivery_time": None},
+                  "pharmacy": {"store_id": "SPR-003", "hours": {"weekday_hours": "8AM-8PM", "weekend_hours": "8AM-5PM"}},
+              },
+              {
+                  "order_id": "ORD007",
+                  "member_id": "M1007",
+                  "status": "shipped",
+                  "prescriptions": [{"rx_id": "RX1007", "name": "Levothyroxine 75mcg", "quantity": 30, "refills_remaining": 3}],
+                  "timing": {"ready_at": None, "shipped_at": "2025-11-26T16:20:00", "delivered_at": None, "expected_pickup_time": None, "expected_delivery_time": "2025-12-09T10:30:00"},
+                  "pharmacy": {"store_id": "SPR-004", "hours": {"weekday_hours": "8AM-8PM", "weekend_hours": "8AM-5PM"}},
+              },
+              {
+                  "order_id": "ORD008",
+                  "member_id": "M1008",
+                  "status": "delivered",
+                  "prescriptions": [{"rx_id": "RX1008", "name": "Amlodipine 5mg", "quantity": 30, "refills_remaining": 1}],
+                  "timing": {"ready_at": None, "shipped_at": "2025-11-29T13:00:00", "delivered_at": "2025-12-12T09:25", "expected_pickup_time": None, "expected_delivery_time": None},
+                  "pharmacy": {"store_id": "SPR-004", "hours": {"weekday_hours": "8AM-8PM", "weekend_hours": "8AM-5PM"}},
+              },
+          ]
+
+          def lambda_handler(event, context):
+              try:
+                  if "customerId" not in event:
+                      return {"error": "customerId field is required"}
+                  customer_id = event["customerId"]
+                  matching = [o for o in ORDERS if o["member_id"] == customer_id]
+                  return {"orders": matching}
+              except Exception:
+                  return {"error": "Internal server error"}
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 10
+      MemorySize: 128
+
+  GatewayLambdaInvokePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AgentCoreGatewayLambdaInvoke
+      Roles:
+        - !Ref AgentCoreGatewayRoleName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AmazonBedrockAgentCoreGatewayLambdaInvoke
+            Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*
+
+Outputs:
+  AuthenticateUserFunctionArn:
+    Description: ARN of the authenticate_user Lambda
+    Value: !GetAtt AuthenticateUserFunction.Arn
+  GetPrescriptionsFunctionArn:
+    Description: ARN of the get_prescriptions Lambda
+    Value: !GetAtt GetPrescriptionsFunction.Arn
+  LambdaExecutionRoleArn:
+    Description: ARN of the shared Lambda execution role
+    Value: !GetAtt LambdaExecutionRole.Arn
