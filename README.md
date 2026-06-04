@@ -64,14 +64,16 @@ summary shorter"*, or *"add a third tool for scheduling a payment."*
 
 ### Deploying a generated demo
 
-Once the files are generated:
+Once the files are generated, the high-level flow is:
 
 1. Deploy `{vertical}_template.yaml` with CloudFormation (creates the Lambda functions).
 2. Upload each `*_schema.json` to its Bedrock Agent Core gateway target.
 3. Paste `connect-system-prompt.yaml` into the Connect AI Agent prompt editor and publish a version.
 4. Import `connect-flow-template.json` as a contact flow and replace the placeholder ARNs.
 
-See `references/examples.md` for the exact format of each file, and `demo-guide.md` (generated per
+See **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** for the full step-by-step walkthrough (CloudFormation,
+Agent Core gateway, MCP server, AI agent, Lex bot, contact flow, and testing). See
+`references/examples.md` for the exact format of each file, and `demo-guide.md` (generated per
 demo) for the scenario-specific script and test cases.
 
 ## Getting an API Key
